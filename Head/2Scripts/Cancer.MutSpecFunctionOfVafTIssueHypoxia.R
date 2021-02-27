@@ -70,17 +70,54 @@ cor.test(Agg[Agg$Tier2 == NumerousTissues[5],]$MedianHypoxiaScoreBuffa,Agg[Agg$T
 cor.test(Agg[Agg$Tier2 == NumerousTissues[6],]$MedianHypoxiaScoreBuffa,Agg[Agg$Tier2 == NumerousTissues[6],]$MedianVaf, method = 'spearman') # 
 
 ##### 4:  if there is correlation between A>G and hypoxia (Whole dataset and within numerous cancer types)?
+VecOfSamples = unique(HypMut$sample)
+All = data.frame()
+for (i in 1:length(VecOfSamples))
+{ # i = 1
+  temp = HypMut[HypMut$sample == VecOfSamples[i],]
+  sample = VecOfSamples[i]
+  AhGhfr = nrow(temp[temp$Subst == 'T>C',])/nrow(temp)
+  ChThfr = nrow(temp[temp$Subst == 'G>A',])/nrow(temp)
+  TotalMut = nrow(temp)
+  TotalMutOld = nrow(temp[temp$tumor_var_freq > 5.7,])
+  TotalMutYoung = nrow(temp[temp$tumor_var_freq <= 5.7,])
+  All = rbind(All,c(sample,AhGhfr,ChThfr,TotalMut,TotalMutOld,TotalMutYoung))
+}  
+names(All)=c('sample','AhGhfr','ChThfr','TotalMut','TotalMutOld','TotalMutYoung')
+PatientsSubs = merge(Patients,All, by.x = 'sample', by.y = 'sample', all.x = TRUE)
+##Whole dataset
+cor.test(as.numeric(PatientsSubs$AhGhfr),PatientsSubs$hypoxia_score_buffa, method = 'spearman') #p-value = 0.1869,  rho -0.04590928
+
+##within numerous cancer types
+# Breast   Kidney   Liver    Lung     Ovary    Pancreas
+
+AgMutAG = aggregate(list(PatientsSubs$hypoxia_score_buffa,PatientsSubs$AhGhfr), by = list(PatientsSubs$sample,PatientsSubs$Tier2), FUN = median)
+names(AgMutAG) = c('sample','Tier2','MedianHypoxia_score_buffa','MedianAhGhfr')
+cor.test(AgMutAG[AgMutAG$Tier2 == NumerousTissues[1],]$MedianHypoxia_score_buffa, as.numeric(AgMutAG[AgMutAG$Tier2 == NumerousTissues[1],]$MedianAhGhfr), method = 'spearman')#p-value = 0.2378 , rho 0.09696437
+cor.test(AgMutAG[AgMutAG$Tier2 == NumerousTissues[2],]$MedianHypoxia_score_buffa, as.numeric(AgMutAG[AgMutAG$Tier2 == NumerousTissues[2],]$MedianAhGhfr), method = 'spearman')#p-value = 0.3636, rho -0.1022687
+cor.test(AgMutAG[AgMutAG$Tier2 == NumerousTissues[3],]$MedianHypoxia_score_buffa, as.numeric(AgMutAG[AgMutAG$Tier2 == NumerousTissues[3],]$MedianAhGhfr), method = 'spearman')#p-value = 0.04078, rho -0.22927 !!
+cor.test(AgMutAG[AgMutAG$Tier2 == NumerousTissues[4],]$MedianHypoxia_score_buffa, as.numeric(AgMutAG[AgMutAG$Tier2 == NumerousTissues[4],]$MedianAhGhfr), method = 'spearman')#p-value = 0.2122, rho 0.1447338
+cor.test(AgMutAG[AgMutAG$Tier2 == NumerousTissues[5],]$MedianHypoxia_score_buffa, as.numeric(AgMutAG[AgMutAG$Tier2 == NumerousTissues[5],]$MedianAhGhfr), method = 'spearman')#p-value = 0.1806, rho -0.1630805
+cor.test(AgMutAG[AgMutAG$Tier2 == NumerousTissues[6],]$MedianHypoxia_score_buffa, as.numeric(AgMutAG[AgMutAG$Tier2 == NumerousTissues[6],]$MedianAhGhfr), method = 'spearman')#p-value = 0.1334, rho 0.215187
+
+
 ##### 5:  if there is correlation between Absolute number of mtDNA mutationsand hypoxia (Whole dataset and within numerous cancer types)?
+#Whole dataset
+cor.test(as.numeric(PatientsSubs$TotalMut),PatientsSubs$hypoxia_score_buffa, method = 'spearman')#p-value = 0.5115, rho -0.02284453
 
-names(HypMut)
-Patients = HypMut[,c(1,3,10,11)]; Patients = unique(Patients); nrow(Patients) # 828
-Tissues = data.frame(table(Patients$Tier2)) # 19 vs 21?
-NumerousTissues = Tissues[Tissues$Freq >= 50,]$Var1; length(NumerousTissues) 
-NumerousTissues # Breast   Kidney   Liver    Lung     Ovary    Pancreas
+##within numerous cancer types
+# Breast   Kidney   Liver    Lung     Ovary    Pancreas
 
-i = 1
-temp = HypMut[HypMut$Tier2 == NumerousTissues[i],]
-summary(glm(temp$AhGhDummy ~ temp$hypoxia_score_buffa, family = binomial()))
+AgMut = aggregate(list(PatientsSubs$hypoxia_score_buffa,PatientsSubs$TotalMut), by = list(PatientsSubs$sample,PatientsSubs$Tier2), FUN = median)
+names(AgMut) = c('sample','Tier2','MedianHypoxia_score_buffa','MedianTotalMut')
+cor.test(AgMut[AgMut$Tier2 == NumerousTissues[1],]$MedianHypoxia_score_buffa, as.numeric(AgMut[AgMut$Tier2 == NumerousTissues[1],]$MedianTotalMut), method = 'spearman')#p-value = 0.1202, rho -0.1274129
+cor.test(AgMut[AgMut$Tier2 == NumerousTissues[2],]$MedianHypoxia_score_buffa, as.numeric(AgMut[AgMut$Tier2 == NumerousTissues[2],]$MedianTotalMut), method = 'spearman')#p-value = 0.07312, rho -0.2002114 !!
+cor.test(AgMut[AgMut$Tier2 == NumerousTissues[3],]$MedianHypoxia_score_buffa, as.numeric(AgMut[AgMut$Tier2 == NumerousTissues[3],]$MedianTotalMut), method = 'spearman')#p-value = 0.1871, rho -0.1490221
+cor.test(AgMut[AgMut$Tier2 == NumerousTissues[4],]$MedianHypoxia_score_buffa, as.numeric(AgMut[AgMut$Tier2 == NumerousTissues[4],]$MedianTotalMut), method = 'spearman')#p-value = 0.04079, rho 0.2352533  !!
+cor.test(AgMut[AgMut$Tier2 == NumerousTissues[5],]$MedianHypoxia_score_buffa, as.numeric(AgMut[AgMut$Tier2 == NumerousTissues[5],]$MedianTotalMut), method = 'spearman')#p-value = 0.8206, rho -0.0278093
+cor.test(AgMut[AgMut$Tier2 == NumerousTissues[6],]$MedianHypoxia_score_buffa, as.numeric(AgMut[AgMut$Tier2 == NumerousTissues[6],]$MedianTotalMut), method = 'spearman')#p-value = 0.9393, rho 0.01104142
+
+
 
 
 
